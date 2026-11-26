@@ -1,0 +1,95 @@
+
+name: Claude Daily DSA Backup
+
+on:
+  schedule:
+    - cron: "20 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-activity:
+    runs-on: ubuntu-latest
+    outputs:
+      practiced: ${{ steps.activity.outputs.practiced }}
+
+    steps:
+      - name: Check today's DSA contributions
+        id: activity
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_USER: Gayathri-katneni
+        run: |
+          DAY=$(TZ=Asia/Kolkata date +%F)
+          START="${DAY}T00:00:00+05:30"
+          END=$(TZ=Asia/Kolkata date --iso-8601=seconds)
+
+          COUNT=$(gh api --method GET \
+            "repos/${GITHUB_REPOSITORY}/commits" \
+            -f author="$GH_USER" \
+            -f since="$START" \
+            -f until="$END" \
+            -f per_page=100 \
+            -q 'length')
+
+          echo "Commits found today: $COUNT"
+
+          if [ "$COUNT" -gt 0 ]; then
+            echo "practiced=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "practiced=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  claude-backup:
+    needs: check-activity
+    if: needs.check-activity.outputs.practiced == 'false'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude DSA maintenance
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            You are maintaining my DSA practice repository.
+
+            No commit from my GitHub account was found today.
+
+            Inspect the repository and choose ONE genuinely useful
+            DSA improvement.
+
+            You may:
+            - Fix a genuine bug.
+            - Improve an existing solution.
+            - Add meaningful test cases.
+            - Add missing explanations.
+            - Add time and space complexity analysis.
+            - Add a classic DSA problem if appropriate.
+
+            Requirements:
+            - Follow existing repository conventions.
+            - Never duplicate existing problems.
+            - Never create empty or artificial changes.
+            - Run relevant tests or checks.
+            - Do not modify unrelated files.
+            - If no meaningful task exists, make no changes.
+            - Identify all work as AI-authored.
+            - Never impersonate the repository owner.
+            - Never modify the main branch directly.
+            - Publish useful work on a separate branch.
+            - Provide a link to create a pull request.
+            - Never merge a pull request.
+
+          claude_args: |
+            --max-turns 10
+            --append-system-prompt "Work only within this repository. Do not claim that AI-authored commits are the user's personal contributions."

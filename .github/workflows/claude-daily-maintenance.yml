@@ -21,6 +21,7 @@ jobs:
     steps:
       - name: Check today's DSA contributions
         id: activity
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           GH_USER: Gayathri-katneni
@@ -29,15 +30,24 @@ jobs:
           START="${DAY}T00:00:00+05:30"
           END=$(TZ=Asia/Kolkata date --iso-8601=seconds)
 
-          COUNT=$(gh api --method GET \
+          SHAS=$(gh api --paginate --slurp \
             "repos/${GITHUB_REPOSITORY}/commits" \
             -f author="$GH_USER" \
             -f since="$START" \
             -f until="$END" \
-            -f per_page=100 \
-            -q 'length')
+            -f per_page=100 | jq -r '.[][] | .sha')
 
-          echo "Commits found today in this repository: $COUNT"
+          COUNT=0
+
+          for SHA in $SHAS; do
+            if gh api "repos/${GITHUB_REPOSITORY}/commits/${SHA}" \
+              --jq '.files[].filename' |
+              grep -Eq '^[0-9]+ - [^/]+/'; then
+              COUNT=$((COUNT + 1))
+            fi
+          done
+
+          echo "DSA practice commits found today: $COUNT"
 
           if [ "$COUNT" -gt 0 ]; then
             echo "practiced=true" >> "$GITHUB_OUTPUT"
@@ -64,51 +74,52 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
           prompt: |
             You are an AI maintenance assistant for this DSA practice repository.
 
-            The activity checker found no commit from the repository owner today.
-            Work only in this repository.
+            The activity checker found no DSA practice commits from the
+            repository owner today.
 
-            IMPORTANT FIRST STEPS:
-            1. Fetch the latest main branch from origin.
-            2. Inspect the latest main branch, not an old branch or stale copy.
-            3. Inspect the repository structure, README, existing problem folders,
-               solution files, and open pull requests.
-            4. Check carefully that your proposed work does not already exist.
+            FIRST:
+            1. Fetch the latest main branch.
+            2. Inspect the repository structure and existing solutions.
+            3. Inspect open pull requests.
+            4. Check that your proposed improvement does not already exist.
 
             Choose at most ONE genuinely useful improvement.
 
-            Suitable work:
-            - Fix a real bug in an existing solution.
+            Suitable improvements:
+            - Fix a genuine bug in an existing solution.
             - Improve an existing solution meaningfully.
             - Add useful test cases.
-            - Add missing explanations or complexity analysis.
-            - Add a classic DSA problem only if it is genuinely missing.
+            - Add missing explanations.
+            - Add time and space complexity analysis.
+            - Add a classic DSA problem only if it is missing.
 
             STRICT RULES:
             - Never duplicate an existing problem or solution.
             - Never repeat work already present in an open pull request.
-            - Never create empty, artificial, or cosmetic-only changes.
+            - Never create empty or artificial changes.
             - Do not modify unrelated files.
-            - Follow the repository's existing naming and coding conventions.
-            - Run relevant tests or checks and inspect your final diff.
-            - If no meaningful improvement exists, make no changes and stop.
+            - Follow existing repository conventions.
+            - Run relevant tests and inspect the final diff.
+            - If no meaningful improvement exists, make no changes.
             - Never modify main directly.
             - Never impersonate the repository owner.
-            - Keep all AI-authored work transparent.
+            - Clearly identify all work as AI-authored.
 
             PUBLISHING:
-            - Create a new branch from the latest origin/main.
+            - Create a separate branch from the latest main.
             - Commit only meaningful, tested changes.
             - Push the branch to origin.
-            - If changes were successfully made, use GitHub CLI
+            - If useful changes were made, use GitHub CLI
               (gh pr create) to open a pull request against main.
-            - Give the PR a clear title and explain the changes and tests.
+            - Include a clear title, description and test results.
             - If there are no changes, do not create a branch or PR.
             - Never merge a pull request.
 
-            At the end, report whether you made changes, which tests ran,
+            Finally report what you did, which tests ran,
             and the pull request URL if one was created.
 
           claude_args: |

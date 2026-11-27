@@ -26,22 +26,34 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_USER: Gayathri-katneni
         run: |
+          set -euo pipefail
+
           DAY=$(TZ=Asia/Kolkata date +%F)
           START="${DAY}T00:00:00+05:30"
           END=$(TZ=Asia/Kolkata date --iso-8601=seconds)
 
-          SHAS=$(gh api --paginate --slurp \
+          echo "Checking DSA commits for $DAY"
+
+          SHAS=$(gh api \
+            --method GET \
+            --paginate \
+            --slurp \
             "repos/${GITHUB_REPOSITORY}/commits" \
             -f author="$GH_USER" \
             -f since="$START" \
             -f until="$END" \
-            -f per_page=100 | jq -r '.[][] | .sha')
+            -f per_page=100 |
+            jq -r '.[][] | .sha')
 
           COUNT=0
 
           for SHA in $SHAS; do
-            if gh api "repos/${GITHUB_REPOSITORY}/commits/${SHA}" \
-              --jq '.files[].filename' |
+            FILES=$(gh api \
+              --method GET \
+              "repos/${GITHUB_REPOSITORY}/commits/${SHA}" \
+              --jq '.files[]?.filename')
+
+            if printf '%s\n' "$FILES" |
               grep -Eq '^[0-9]+ - [^/]+/'; then
               COUNT=$((COUNT + 1))
             fi
@@ -51,8 +63,10 @@ jobs:
 
           if [ "$COUNT" -gt 0 ]; then
             echo "practiced=true" >> "$GITHUB_OUTPUT"
+            echo "DSA practice detected. Claude will be skipped."
           else
             echo "practiced=false" >> "$GITHUB_OUTPUT"
+            echo "No DSA practice detected. Claude maintenance will run."
           fi
 
   claude-backup:

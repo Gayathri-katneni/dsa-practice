@@ -95,45 +95,60 @@ jobs:
             The activity checker found no DSA practice commits from the
             repository owner today.
 
+            YOUR TASK:
+
+            Create exactly TWO useful README.md files for TWO older
+            DSA problems in this repository.
+
             FIRST:
             1. Fetch the latest main branch.
             2. Inspect the repository structure and existing solutions.
             3. Inspect open pull requests.
-            4. Check that your proposed improvement does not already exist.
+            4. Identify two older numbered problem folders that do not
+               already contain a README.md.
+            5. Read the existing solution files carefully.
 
-            Choose at most ONE genuinely useful improvement.
-
-            Suitable improvements:
-            - Fix a genuine bug in an existing solution.
-            - Improve an existing solution meaningfully.
-            - Add useful test cases.
-            - Add missing explanations.
-            - Add time and space complexity analysis.
-            - Add a classic DSA problem only if it is missing.
+            README CONTENT:
+            Each README must include:
+            - Problem description
+            - Explanation of the approach
+            - Step-by-step logic
+            - Example walkthrough
+            - Time complexity
+            - Space complexity
 
             STRICT RULES:
-            - Never duplicate an existing problem or solution.
-            - Never repeat work already present in an open pull request.
-            - Never create empty or artificial changes.
+            - Choose two different existing problems.
+            - Never duplicate an existing README.
+            - Base explanations on the actual existing solutions.
+            - Do not invent problem requirements or examples.
+            - Do not modify original solution files.
             - Do not modify unrelated files.
+            - Do not create superficial documentation.
             - Follow existing repository conventions.
-            - Run relevant tests and inspect the final diff.
-            - If no meaningful improvement exists, make no changes.
-            - Never modify main directly.
-            - Never impersonate the repository owner.
+            - If two suitable problems cannot be found,
+              do not fabricate work.
             - Clearly identify all work as AI-authored.
+
+            TESTING:
+            - Check both README files for accuracy.
+            - Inspect the final diff.
+            - Confirm exactly two README files were added.
+            - Do not create empty or artificial changes.
 
             PUBLISHING:
             - Create a separate branch from the latest main.
-            - Commit only meaningful, tested changes.
+            - Commit only the two meaningful README files.
             - Push the branch to origin.
-            - If useful changes were made, use GitHub CLI
-              (gh pr create) to open a pull request against main.
-            - Include a clear title, description and test results.
-            - If there are no changes, do not create a branch or PR.
+            - If both README files are valid, use GitHub CLI
+              (gh pr create) to open one pull request against main.
+            - Include a clear title, description and verification details.
+            - If no valid work is possible, do not create a branch or PR.
+            - Never modify main directly.
+            - Never impersonate the repository owner.
             - Never merge a pull request.
 
-            Finally report what you did, which tests ran,
+            Finally report what you did, which files were added,
             and the pull request URL if one was created.
 
           claude_args: |
